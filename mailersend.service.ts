@@ -1,28 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 import {
   Attachment,
   EmailParams,
   MailerSend,
   Recipient,
   Sender,
-} from 'mailersend';
-import { ResponseMsgService } from 'src/commons';
-import { MailerSendRequest } from './dto/mailersend.request';
-import * as fs from 'fs';
-import { config } from 'src/commons/config';
-import { MailersendAttachmentsDto } from './dto/mailersend.dto';
-import { FilesService } from 'src/modules/files/files.service';
-
-// export const TEMPLATE = {
-//   SET_PASSWORD: 'pxkjn41z9k5lz781',
-// };
+} from "mailersend";
+import { ResponseMsgService } from "src/commons";
+import { MailerSendRequest } from "./dto/mailersend.request";
+import * as fs from "fs";
+import { config } from "src/commons/config";
+import { MailersendAttachmentsDto } from "./dto/mailersend.dto";
+import { FilesService } from "src/modules/files/files.service";
 
 @Injectable()
 export class MailerSendService {
   private instance;
   constructor(
     private responseMsgService: ResponseMsgService,
-    private filesService: FilesService,
+    private filesService: FilesService
   ) {
     this.instance = new MailerSend({
       apiKey: config.mailersend_api_key,
@@ -38,12 +34,12 @@ export class MailerSendService {
    * @param {string} [template] - Optional. The email template to use.
    *
    * @returns {Promise<boolean | MailerSendResponse>} - Returns a promise that resolves to a boolean value or MailerSend response.
- */
+   */
   async sendMail(
     data: MailerSendRequest,
     embedded?: MailersendAttachmentsDto[],
     files?: MailersendAttachmentsDto[],
-    template?: string,
+    template?: string
   ) {
     const recipients = [new Recipient(data.sent_to)];
     const attachments = [];
@@ -51,38 +47,34 @@ export class MailerSendService {
 
     if (embedded && embedded.length > 0) {
       try {
-        embedded.map((value: MailersendAttachmentsDto) => {
-          const resPath = this.filesService.getFilePathByFileId(value.file_id);
+        for (const value of embedded) {
+          const resPath = await this.filesService.getFileObjectFromFileId(
+            value.file_id
+          );
           attachments.push({
-            content: fs.readFileSync(resPath, {
-              encoding: 'base64',
-            }),
-            disposition: 'inline',
+            content: resPath?.base64,
+            disposition: "inline",
             filename: value.fileName,
-            id: 'image_' + value.file_id,
+            id: "image_" + value.file_id,
           });
-        });
+        }
       } catch (e) {
-        console.log('mailersend embedded', e);
+        console.log("mailersend embedded", e);
       }
     }
 
     if (files && files.length > 0) {
       try {
-        files.map((value: MailersendAttachmentsDto) => {
-          const resPath = this.filesService.getFilePathByFileId(value.file_id);
-          attachments.push(
-            new Attachment(
-              fs.readFileSync(resPath, {
-                encoding: 'base64',
-              }),
-              value.fileName,
-              'attachment',
-            ),
+        for (const value of files) {
+          const resPath = await this.filesService.getFileObjectFromFileId(
+            value.file_id
           );
-        });
+          attachments.push(
+            new Attachment(resPath?.base64, value.fileName, "attachment")
+          );
+        }
       } catch (e) {
-        console.log('mailersend files', e);
+        console.log("mailersend files", e);
       }
     }
 
@@ -110,15 +102,15 @@ export class MailerSendService {
         res?.body?.warnings?.forEach((warning) => {
           this.responseMsgService.addErrorMsg({
             message: `${warning.message} Please contact to super admin.`,
-            type: 'error',
+            type: "error",
             show: true,
           });
         });
         this.responseMsgService.isSuccess(false);
       } else {
         this.responseMsgService.addSuccessMsg({
-          message: 'Mail was sent to provider',
-          type: 'success',
+          message: "Mail was sent to provider",
+          type: "success",
           show: true,
         });
         this.responseMsgService.isSuccess(true);
@@ -126,8 +118,8 @@ export class MailerSendService {
       return res;
     } else {
       this.responseMsgService.addErrorMsg({
-        message: 'We are unable to connect mail provider',
-        type: 'error',
+        message: "We are unable to connect mail provider",
+        type: "error",
         show: true,
       });
       this.responseMsgService.isSuccess(false);
