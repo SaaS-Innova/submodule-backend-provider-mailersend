@@ -21,7 +21,7 @@ export class MailerSendService {
     private filesService: FilesService
   ) {
     this.instance = new MailerSend({
-      apiKey: config.mailersend_api_key,
+      apiKey: config.MAILERSEND_API_KEY,
     });
   }
 
