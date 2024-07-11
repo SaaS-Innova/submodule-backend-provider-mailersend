@@ -8,17 +8,16 @@ import {
 } from "mailersend";
 import { ResponseMsgService } from "src/commons";
 import { MailerSendRequest } from "./dto/mailersend.request";
-import * as fs from "fs";
 import { config } from "src/commons/config";
 import { MailersendAttachmentsDto } from "./dto/mailersend.dto";
-import { FilesService } from "src/modules/files/files.service";
+import { FileProvider } from "../file-provider/file-provider.service";
 
 @Injectable()
 export class MailerSendService {
   private instance;
   constructor(
     private responseMsgService: ResponseMsgService,
-    private filesService: FilesService
+    private fileProvider: FileProvider
   ) {
     this.instance = new MailerSend({
       apiKey: config.MAILERSEND_API_KEY,
@@ -48,13 +47,11 @@ export class MailerSendService {
     if (embedded && embedded.length > 0) {
       try {
         for (const value of embedded) {
-          const resPath = await this.filesService.getFileObjectFromFileId(
-            value.file_id
-          );
+          const res = await this.fileProvider.getFileDetails(value.files);
           attachments.push({
-            content: resPath?.base64,
+            content: res?.base64,
             disposition: "inline",
-            filename: value.fileName,
+            filename: res.originalName,
             id: "image_" + value.file_id,
           });
         }
@@ -66,11 +63,9 @@ export class MailerSendService {
     if (files && files.length > 0) {
       try {
         for (const value of files) {
-          const resPath = await this.filesService.getFileObjectFromFileId(
-            value.file_id
-          );
+          const res = await this.fileProvider.getFileDetails(value.files);
           attachments.push(
-            new Attachment(resPath?.base64, value.fileName, "attachment")
+            new Attachment(res?.base64, value.fileName, "attachment")
           );
         }
       } catch (e) {

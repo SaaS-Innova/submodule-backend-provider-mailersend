@@ -1,4 +1,5 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from "@nestjs/graphql";
+import { File } from "src/modules/file/entities/file.entity";
 
 @ObjectType()
 export class MailersendAttachmentsDto {
@@ -10,4 +11,7 @@ export class MailersendAttachmentsDto {
 
   @Field(() => String, { nullable: true })
   fileName?: string | null;
+
+  @Field(() => File, { nullable: true })
+  files?: File;
 }
