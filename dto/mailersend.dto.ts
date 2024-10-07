@@ -10,7 +10,7 @@ export class MailersendAttachmentsDto {
   embedded?: boolean | null;
 
   @Field(() => String, { nullable: true })
-  fileName?: string | null;
+  originalName?: string | null;
 
   @Field(() => File, { nullable: true })
   files?: File;

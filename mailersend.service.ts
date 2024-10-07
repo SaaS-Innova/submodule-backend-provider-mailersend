@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import {
   Attachment,
   EmailParams,
@@ -11,6 +11,11 @@ import { MailerSendRequest } from "./dto/mailersend.request";
 import { config } from "src/commons/config";
 import { MailersendAttachmentsDto } from "./dto/mailersend.dto";
 import { FileProvider } from "../file-provider/file-provider.service";
+import {
+  MAX_BASE64_SIZE,
+  MAX_BODY_SIZE_BYTES,
+  MAX_BODY_SIZE_MB,
+} from "./const";
 
 @Injectable()
 export class MailerSendService {
@@ -40,23 +45,35 @@ export class MailerSendService {
     files?: MailersendAttachmentsDto[],
     template?: string
   ) {
-    const recipients = [new Recipient(data.sent_to)];
-    const attachments = [];
+    this.validateHTMLSize(data.body);
+    const recipients = JSON.parse(data.to || "[]").map(
+      (email: { email: string; company_has_user_id: number | null }) =>
+        new Recipient(email.email)
+    );
+    const attachments: Attachment[] = [];
     const sentFrom = new Sender(data.received_from, data.received_from_name);
 
     if (embedded && embedded.length > 0) {
       try {
         for (const value of embedded) {
           const res = await this.fileProvider.getFileDetails(value.files);
-          attachments.push({
-            content: res?.base64,
-            disposition: "inline",
-            filename: res.originalName,
-            id: "image_" + value.file_id,
-          });
+          this.validateBase64Size(
+            res.base64,
+            res.originalName,
+            MAX_BASE64_SIZE
+          );
+          attachments.push(
+            new Attachment(
+              res.base64,
+              res.originalName,
+              "inline",
+              "image_" + value.file_id
+            )
+          );
         }
       } catch (e) {
         console.log("mailersend embedded", e);
+        throw new BadRequestException(e);
       }
     }
 
@@ -64,12 +81,18 @@ export class MailerSendService {
       try {
         for (const value of files) {
           const res = await this.fileProvider.getFileDetails(value.files);
+          this.validateBase64Size(
+            res.base64,
+            res.originalName,
+            MAX_BASE64_SIZE
+          );
           attachments.push(
-            new Attachment(res?.base64, value.fileName, "attachment")
+            new Attachment(res?.base64, res.originalName, "attachment")
           );
         }
       } catch (e) {
         console.log("mailersend files", e);
+        throw new BadRequestException(e);
       }
     }
 
@@ -80,38 +103,40 @@ export class MailerSendService {
       .setAttachments(attachments);
 
     if (template) {
-      const personalization = [
-        {
-          email: data.sent_to,
+      const personalization = JSON.parse(data.to || "[]").map(
+        (to: { email: string }) => ({
+          email: to.email,
           data: data.personalization,
-        },
-      ];
+        })
+      );
       emailParams.setTemplateId(template).setPersonalization(personalization);
     } else {
       emailParams.setHtml(data.body);
     }
 
-    const res = await this.instance.email.send(emailParams);
-    if (res.statusCode === 202 || res.statusCode === 200) {
-      if (res?.body && res?.body?.warnings) {
-        res?.body?.warnings?.forEach((warning) => {
-          this.responseMsgService.addErrorMsg({
-            message: `${warning.message} Please contact to super admin.`,
-            type: "error",
+    try {
+      const res = await this.instance.email.send(emailParams);
+      if (res.statusCode === 202 || res.statusCode === 200) {
+        if (res?.body && res?.body?.warnings) {
+          res?.body?.warnings?.forEach((warning) => {
+            this.responseMsgService.addErrorMsg({
+              message: `${warning.message} Please contact to super admin.`,
+              type: "error",
+              show: true,
+            });
+          });
+          this.responseMsgService.isSuccess(false);
+        } else {
+          this.responseMsgService.addSuccessMsg({
+            message: "Mail was sent to provider",
+            type: "success",
             show: true,
           });
-        });
-        this.responseMsgService.isSuccess(false);
-      } else {
-        this.responseMsgService.addSuccessMsg({
-          message: "Mail was sent to provider",
-          type: "success",
-          show: true,
-        });
-        this.responseMsgService.isSuccess(true);
+          this.responseMsgService.isSuccess(true);
+        }
+        return res;
       }
-      return res;
-    } else {
+    } catch (e) {
       this.responseMsgService.addErrorMsg({
         message: "We are unable to connect mail provider",
         type: "error",
@@ -119,6 +144,40 @@ export class MailerSendService {
       });
       this.responseMsgService.isSuccess(false);
       return false;
+    }
+  }
+
+  private validateHTMLSize(body: any): void {
+    const bodyString = typeof body === "string" ? body : JSON.stringify(body);
+    const bodySize = new TextEncoder().encode(bodyString).length;
+
+    if (bodySize > MAX_BODY_SIZE_BYTES) {
+      this.responseMsgService.addSuccessMsg({
+        message: `Body size exceeds the maximum limit of ${MAX_BODY_SIZE_MB} MB.`,
+        type: "error",
+        show: true,
+      });
+      throw new BadRequestException();
+    }
+  }
+
+  private validateBase64Size(
+    base64: string,
+    fileName: string,
+    maxSize: number
+  ): void {
+    const base64Size =
+      (base64.length * 3) / 4 -
+      (base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0);
+    if (base64Size > maxSize) {
+      this.responseMsgService.addSuccessMsg({
+        message: `File ${fileName} exceeds the size limit of ${
+          maxSize / (1024 * 1024)
+        }MB.`,
+        type: "error",
+        show: true,
+      });
+      throw new BadRequestException();
     }
   }
 }

@@ -1,10 +1,9 @@
-import { ObjectType } from '@nestjs/graphql';
-import { IsEmail } from 'class-validator';
+import { ObjectType } from "@nestjs/graphql";
+import { IsEmail } from "class-validator";
 
 @ObjectType()
 export class MailerSendRequest {
-  @IsEmail()
-  sent_to: string;
+  to: string;
 
   @IsEmail()
   received_from: string;
