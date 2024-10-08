@@ -47,8 +47,7 @@ export class MailerSendService {
   ) {
     this.validateHTMLSize(data.body);
     const recipients = JSON.parse(data.to || "[]").map(
-      (email: { email: string; company_has_user_id: number | null }) =>
-        new Recipient(email.email)
+      (to: { email: string }) => new Recipient(to.email)
     );
     const attachments: Attachment[] = [];
     const sentFrom = new Sender(data.received_from, data.received_from_name);
