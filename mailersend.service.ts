@@ -153,14 +153,13 @@ export class MailerSendService {
     const bodySize = new TextEncoder().encode(bodyString).length;
 
     if (bodySize > MAX_BODY_SIZE_BYTES) {
+      const errorMessage = `Body size exceeds the maximum limit of ${MAX_BODY_SIZE_MB} MB.`;
       this.responseMsgService.addSuccessMsg({
-        message: `Body size exceeds the maximum limit of ${MAX_BODY_SIZE_MB} MB.`,
+        message: errorMessage,
         type: "error",
         show: true,
       });
-      throw new BadRequestException(
-        `Body size exceeds the maximum limit of ${MAX_BODY_SIZE_MB} MB.`
-      );
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -173,18 +172,15 @@ export class MailerSendService {
       (base64.length * 3) / 4 -
       (base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0);
     if (base64Size > maxSize) {
+      const errorMessage = `File ${fileName} exceeds the size limit of ${
+        maxSize / (1024 * 1024)
+      }MB.`;
       this.responseMsgService.addSuccessMsg({
-        message: `File ${fileName} exceeds the size limit of ${
-          maxSize / (1024 * 1024)
-        }MB.`,
+        message: errorMessage,
         type: "error",
         show: true,
       });
-      throw new BadRequestException(
-        `File ${fileName} exceeds the size limit of ${
-          maxSize / (1024 * 1024)
-        }MB.`
-      );
+      throw new BadRequestException(errorMessage);
     }
   }
 }
