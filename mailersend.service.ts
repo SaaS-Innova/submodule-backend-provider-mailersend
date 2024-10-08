@@ -136,7 +136,8 @@ export class MailerSendService {
         }
         return res;
       }
-    } catch (e) {
+    } catch (error) {
+      console.log("mailersend error", error);
       this.responseMsgService.addErrorMsg({
         message: "We are unable to connect mail provider",
         type: "error",
@@ -147,7 +148,7 @@ export class MailerSendService {
     }
   }
 
-  private validateHTMLSize(body: any): void {
+  validateHTMLSize(body: any): void {
     const bodyString = typeof body === "string" ? body : JSON.stringify(body);
     const bodySize = new TextEncoder().encode(bodyString).length;
 
