@@ -158,7 +158,9 @@ export class MailerSendService {
         type: "error",
         show: true,
       });
-      throw new BadRequestException();
+      throw new BadRequestException(
+        `Body size exceeds the maximum limit of ${MAX_BODY_SIZE_MB} MB.`
+      );
     }
   }
 
@@ -178,7 +180,11 @@ export class MailerSendService {
         type: "error",
         show: true,
       });
-      throw new BadRequestException();
+      throw new BadRequestException(
+        `File ${fileName} exceeds the size limit of ${
+          maxSize / (1024 * 1024)
+        }MB.`
+      );
     }
   }
 }
