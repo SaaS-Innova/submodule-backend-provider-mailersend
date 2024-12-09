@@ -5,6 +5,10 @@ import { IsEmail } from "class-validator";
 export class MailerSendRequest {
   to: string;
 
+  cc?: string;
+
+  bcc?: string;
+
   @IsEmail()
   received_from: string;
 

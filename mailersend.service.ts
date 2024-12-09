@@ -49,6 +49,12 @@ export class MailerSendService {
     const recipients = JSON.parse(data.to || "[]").map(
       (to: { email: string }) => new Recipient(to.email)
     );
+    const recipientsCC = JSON.parse(data.cc || "[]").map(
+      (cc: { email: string }) => new Recipient(cc.email)
+    );
+    const recipientsBCC = JSON.parse(data.bcc || "[]").map(
+      (bcc: { email: string }) => new Recipient(bcc.email)
+    );
     const attachments: Attachment[] = [];
     const sentFrom = new Sender(data.received_from, data.received_from_name);
 
@@ -72,7 +78,6 @@ export class MailerSendService {
         }
       } catch (e) {
         console.log("mailersend embedded", e);
-        throw new BadRequestException(e);
       }
     }
 
@@ -91,13 +96,14 @@ export class MailerSendService {
         }
       } catch (e) {
         console.log("mailersend files", e);
-        throw new BadRequestException(e);
       }
     }
 
     const emailParams = new EmailParams()
       .setFrom(sentFrom)
       .setTo(recipients)
+      .setCc(recipientsCC)
+      .setBcc(recipientsBCC)
       .setSubject(data.subject)
       .setAttachments(attachments);
 
