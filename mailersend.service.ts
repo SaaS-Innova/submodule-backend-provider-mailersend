@@ -7,7 +7,7 @@ import {
   Sender,
 } from "mailersend";
 import { ResponseMsgService } from "src/commons";
-import { MailerSendRequest } from "./dto/mailersend.request";
+import { MailerSendRequest, MailHeader } from "./dto/mailersend.request";
 import { config } from "src/commons/config";
 import { MailersendAttachmentsDto } from "./dto/mailersend.dto";
 import { FileProvider } from "../file-provider/file-provider.service";
@@ -36,6 +36,7 @@ export class MailerSendService {
    * @param {MailersendAttachmentsDto[]} [embedded] - Optional. An array of embedded attachments.
    * @param {MailersendAttachmentsDto[]} [files] - Optional. An array of regular attachments.
    * @param {string} [template] - Optional. The email template to use.
+   * @param {MailHeader[]} [headers] - Optional. Custom headers for the email.
    *
    * @returns {Promise<boolean | MailerSendResponse>} - Returns a promise that resolves to a boolean value or MailerSend response.
    */
@@ -43,7 +44,8 @@ export class MailerSendService {
     data: MailerSendRequest,
     embedded?: MailersendAttachmentsDto[],
     files?: MailersendAttachmentsDto[],
-    template?: string
+    template?: string,
+    headers?: MailHeader[]
   ) {
     this.validateHTMLSize(data.body);
     const recipients = JSON.parse(data.to || "[]").map(
@@ -106,7 +108,11 @@ export class MailerSendService {
       .setBcc(recipientsBCC)
       .setSubject(data.subject)
       .setAttachments(attachments);
-
+    if (emailParams.setHeaders) {
+      emailParams.setHeaders(headers);
+    } else {
+      (emailParams as any).headers = headers;
+    }
     if (template) {
       const personalization = JSON.parse(data.to || "[]").map(
         (to: { email: string }) => ({

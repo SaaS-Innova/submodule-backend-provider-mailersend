@@ -20,3 +20,9 @@ export class MailerSendRequest {
 
   personalization?: { [key: string]: any };
 }
+
+@ObjectType()
+export class MailHeader {
+  name: string;
+  value: string;
+}
