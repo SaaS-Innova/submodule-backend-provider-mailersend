@@ -108,11 +108,9 @@ export class MailerSendService {
       .setBcc(recipientsBCC)
       .setSubject(data.subject)
       .setAttachments(attachments);
-    if (emailParams.setHeaders) {
-      emailParams.setHeaders(headers);
-    } else {
-      (emailParams as any).headers = headers;
-    }
+
+    (emailParams as any).headers = headers;
+
     if (template) {
       const personalization = JSON.parse(data.to || "[]").map(
         (to: { email: string }) => ({
