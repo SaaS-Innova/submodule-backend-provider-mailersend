@@ -19,10 +19,10 @@ import {
 
 @Injectable()
 export class MailerSendService {
-  private instance;
+  private readonly instance;
   constructor(
-    private responseMsgService: ResponseMsgService,
-    private fileProvider: FileProvider
+    private readonly responseMsgService: ResponseMsgService,
+    private readonly fileProvider: FileProvider
   ) {
     this.instance = new MailerSend({
       apiKey: config.MAILERSEND_API_KEY,
@@ -177,9 +177,23 @@ export class MailerSendService {
     fileName: string,
     maxSize: number
   ): void {
-    const base64Size =
-      (base64.length * 3) / 4 -
-      (base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0);
+    if (!base64 || base64 === "undefined") {
+      const errorMessage = `File ${fileName} is missing or invalid base64 data.`;
+      this.responseMsgService.addSuccessMsg({
+        message: errorMessage,
+        type: "error",
+        show: true,
+      });
+      throw new BadRequestException(errorMessage);
+    }
+    let paddingLength = 0;
+    if (base64.endsWith("==")) {
+      paddingLength = 2;
+    } else if (base64.endsWith("=")) {
+      paddingLength = 1;
+    }
+
+    const base64Size = (base64.length * 3) / 4 - paddingLength;
     if (base64Size > maxSize) {
       const errorMessage = `File ${fileName} exceeds the size limit of ${
         maxSize / (1024 * 1024)
