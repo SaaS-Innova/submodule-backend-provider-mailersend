@@ -19,6 +19,10 @@ export class MailerSendRequest {
   received_from_name: string;
 
   personalization?: { [key: string]: any };
+
+  inReplyTo?: string;
+
+  reply_references?: string[];
 }
 
 @ObjectType()

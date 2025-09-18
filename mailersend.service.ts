@@ -111,6 +111,14 @@ export class MailerSendService {
 
     (emailParams as any).headers = headers;
 
+    if (data.inReplyTo) {
+      emailParams.setInReplyTo(data.inReplyTo);
+    }
+
+    if (data.reply_references && data.reply_references.length > 0) {
+      (emailParams as any).reply_references = data.reply_references;
+    }
+
     if (template) {
       const personalization = JSON.parse(data.to || "[]").map(
         (to: { email: string }) => ({
