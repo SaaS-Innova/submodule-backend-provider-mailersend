@@ -115,8 +115,8 @@ export class MailerSendService {
       emailParams.setInReplyTo(data.inReplyTo);
     }
 
-    if (data.reply_references && data.reply_references.length > 0) {
-      (emailParams as any).reply_references = data.reply_references;
+    if (data.replyReferences && data.replyReferences.length > 0) {
+      (emailParams as any).references = data.replyReferences;
     }
 
     if (template) {

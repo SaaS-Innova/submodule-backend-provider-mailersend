@@ -22,7 +22,7 @@ export class MailerSendRequest {
 
   inReplyTo?: string;
 
-  reply_references?: string[];
+  replyReferences?: string[];
 }
 
 @ObjectType()
