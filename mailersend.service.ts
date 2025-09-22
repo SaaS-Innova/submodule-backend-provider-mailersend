@@ -64,12 +64,7 @@ export class MailerSendService {
     if (embedded && embedded.length > 0) {
       try {
         for (const value of embedded) {
-          let res: MailersendBase64AttachmentsDto;
-          if (value instanceof MailersendAttachmentsDto) {
-            res = await this.fileProvider.getFileDetails(value.files);
-          } else {
-            res = value;
-          }
+          const res = await this.fileProvider.getFileDetails(value.files);
           this.validateBase64Size(
             res.base64,
             res.originalName,
@@ -92,7 +87,12 @@ export class MailerSendService {
     if (files && files.length > 0) {
       try {
         for (const value of files) {
-          const res = await this.fileProvider.getFileDetails(value.files);
+          let res: MailersendBase64AttachmentsDto;
+          if (value instanceof MailersendAttachmentsDto) {
+            res = await this.fileProvider.getFileDetails(value.files);
+          } else {
+            res = value;
+          }
           this.validateBase64Size(
             res.base64,
             res.originalName,
