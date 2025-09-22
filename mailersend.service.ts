@@ -16,6 +16,7 @@ import {
   MAX_BODY_SIZE_BYTES,
   MAX_BODY_SIZE_MB,
 } from "./const";
+import { MailersendBase64AttachmentsDto } from "./dto/base64-attachement.dto";
 
 @Injectable()
 export class MailerSendService {
@@ -43,7 +44,7 @@ export class MailerSendService {
   async sendMail(
     data: MailerSendRequest,
     embedded?: MailersendAttachmentsDto[],
-    files?: MailersendAttachmentsDto[],
+    files?: MailersendAttachmentsDto[] | MailersendBase64AttachmentsDto[],
     template?: string,
     headers?: MailHeader[]
   ) {
@@ -63,7 +64,12 @@ export class MailerSendService {
     if (embedded && embedded.length > 0) {
       try {
         for (const value of embedded) {
-          const res = await this.fileProvider.getFileDetails(value.files);
+          let res: MailersendBase64AttachmentsDto;
+          if (value instanceof MailersendAttachmentsDto) {
+            res = await this.fileProvider.getFileDetails(value.files);
+          } else {
+            res = value;
+          }
           this.validateBase64Size(
             res.base64,
             res.originalName,
