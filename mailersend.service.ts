@@ -171,10 +171,8 @@ export class MailerSendService {
     }
   }
 
-  validateHTMLSize(body: any): void {
-    const bodyString = typeof body === "string" ? body : JSON.stringify(body);
-    const bodySize = new TextEncoder().encode(bodyString).length;
-
+  validateHTMLSize(body: string): void {
+    const bodySize = new TextEncoder().encode(body).length;
     if (bodySize > MAX_BODY_SIZE_BYTES) {
       const errorMessage = `Body size exceeds the maximum limit of ${MAX_BODY_SIZE_MB} MB.`;
       this.responseMsgService.addSuccessMsg({
