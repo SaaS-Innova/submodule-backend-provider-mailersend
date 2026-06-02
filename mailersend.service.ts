@@ -5,6 +5,9 @@ import {
   MailerSend,
   Recipient,
   Sender,
+  EmailWebhook,
+  Inbound,
+  InboundFilterType,
 } from "mailersend";
 import { ResponseMsgService } from "src/commons";
 import { MailerSendRequest, MailHeader } from "./dto/mailersend.request";
@@ -181,6 +184,86 @@ export class MailerSendService {
         show: true,
       });
       throw new BadRequestException(errorMessage);
+    }
+  }
+
+  async checkWebhook(): Promise<boolean> {
+    try {
+      const response = await this.instance.email.webhook.single(
+        config.WEBHOOK_ID,
+      );
+      return response?.body?.data?.enabled ?? false;
+    } catch (error) {
+      console.log("error", error);
+      return false;
+    }
+  }
+
+  async enableWebhook(): Promise<boolean> {
+    try {
+      const emailWebhook = new EmailWebhook().setEnabled(true);
+      const response = await this.instance.email.webhook.update(
+        config.WEBHOOK_ID,
+        emailWebhook,
+      );
+      return response?.body?.data?.enabled ?? false;
+    } catch (error) {
+      console.log("error", error);
+      return false;
+    }
+  }
+
+  async checkInbound(): Promise<boolean> {
+    try {
+      const response = await this.instance.email.inbound.single(
+        config.INBOUND_ID,
+      );
+      return response?.body?.data?.enabled ?? false;
+    } catch (error) {
+      console.log("error", error);
+      return false;
+    }
+  }
+
+  async enableInbound(): Promise<boolean> {
+    try {
+      const inboundData = await this.instance.email.inbound.single(
+        config.INBOUND_ID,
+      );
+      const hasDomain =
+        inboundData?.body?.data?.domain !== null &&
+        inboundData?.body?.data?.domain !== undefined;
+
+      const inboundUpdate = new Inbound(
+        inboundData?.body?.data?.name,
+        hasDomain,
+      )
+        .setInboundPriority(inboundData?.body?.data?.priority)
+        .setMatchFilter({ type: InboundFilterType.MATCH_ALL })
+        .setForwards(
+          inboundData?.body?.data?.forwards.map(
+            (forward: { type: string; value: string }) => ({
+              type: forward.type,
+              value: forward.value,
+            }),
+          ),
+        );
+
+      if (hasDomain) {
+        inboundUpdate
+          .setDomainEnabled(true)
+          .setInboundDomain(inboundData?.body?.data?.domain)
+          .setCatchFilter({ type: InboundFilterType.CATCH_ALL })
+          .setDomainId(inboundData?.body?.data?.id);
+      }
+      const response = await this.instance.email.inbound.update(
+        config.INBOUND_ID,
+        inboundUpdate,
+      );
+      return response?.body?.data?.enabled ?? false;
+    } catch (error) {
+      console.log("error", error);
+      return false;
     }
   }
 
