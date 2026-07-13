@@ -189,12 +189,13 @@ export class MailerSendService {
 
   async checkWebhook(): Promise<boolean> {
     try {
-      const response = await this.instance.email.webhook.single(
-        config.WEBHOOK_ID,
-      );
+      const webHookId = process.env.WEBHOOK_ID;
+      if (!webHookId) {
+        return false;
+      }
+      const response = await this.instance.email.webhook.single(webHookId);
       return response?.body?.data?.enabled ?? false;
-    } catch (error) {
-      console.log("error", error);
+    } catch {
       return false;
     }
   }
@@ -202,34 +203,40 @@ export class MailerSendService {
   async enableWebhook(): Promise<boolean> {
     try {
       const emailWebhook = new EmailWebhook().setEnabled(true);
+      const webHookId = process.env.WEBHOOK_ID;
+      if (!webHookId) {
+        return false;
+      }
       const response = await this.instance.email.webhook.update(
-        config.WEBHOOK_ID,
+        webHookId,
         emailWebhook,
       );
       return response?.body?.data?.enabled ?? false;
-    } catch (error) {
-      console.log("error", error);
+    } catch {
       return false;
     }
   }
 
   async checkInbound(): Promise<boolean> {
     try {
-      const response = await this.instance.email.inbound.single(
-        config.INBOUND_ID,
-      );
+      const inboundId = process.env.INBOUND_ID;
+      if (!inboundId) {
+        return false;
+      }
+      const response = await this.instance.email.inbound.single(inboundId);
       return response?.body?.data?.enabled ?? false;
-    } catch (error) {
-      console.log("error", error);
+    } catch {
       return false;
     }
   }
 
   async enableInbound(): Promise<boolean> {
     try {
-      const inboundData = await this.instance.email.inbound.single(
-        config.INBOUND_ID,
-      );
+      const inboundId = process.env.INBOUND_ID;
+      if (!inboundId) {
+        return false;
+      }
+      const inboundData = await this.instance.email.inbound.single(inboundId);
       const hasDomain =
         inboundData?.body?.data?.domain !== null &&
         inboundData?.body?.data?.domain !== undefined;
@@ -257,12 +264,11 @@ export class MailerSendService {
           .setDomainId(inboundData?.body?.data?.id);
       }
       const response = await this.instance.email.inbound.update(
-        config.INBOUND_ID,
+        process.env.INBOUND_ID,
         inboundUpdate,
       );
       return response?.body?.data?.enabled ?? false;
-    } catch (error) {
-      console.log("error", error);
+    } catch {
       return false;
     }
   }
