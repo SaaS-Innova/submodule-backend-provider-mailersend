@@ -244,6 +244,7 @@ export class MailerSendService {
       const inboundUpdate = new Inbound(
         inboundData?.body?.data?.name,
         hasDomain,
+        inboundData?.body?.data?.id,
       )
         .setInboundPriority(inboundData?.body?.data?.priority)
         .setMatchFilter({ type: InboundFilterType.MATCH_ALL })
