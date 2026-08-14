@@ -91,10 +91,12 @@ export class MailerSendService {
       try {
         for (const value of files) {
           let res: MailersendBase64AttachmentsDto;
-          if (value instanceof MailersendAttachmentsDto) {
-            res = await this.fileProvider.getFileDetails(value.files);
+          if (value && "base64" in value && value.base64) {
+            res = value as MailersendBase64AttachmentsDto;
           } else {
-            res = value;
+            res = await this.fileProvider.getFileDetails(
+              (value as MailersendAttachmentsDto).files,
+            );
           }
           this.validateBase64Size(
             res.base64,
