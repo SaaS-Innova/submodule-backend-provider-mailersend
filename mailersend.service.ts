@@ -197,8 +197,9 @@ export class MailerSendService {
       }
       const response = await this.instance.email.webhook.single(webHookId);
       return response?.body?.data?.enabled ?? false;
-    } catch {
-      return false;
+    } catch (error: any) {
+      console.log("error :>> ", error);
+      return this.failMailerSendCall(error, "Error checking webhook status.");
     }
   }
 
@@ -214,8 +215,8 @@ export class MailerSendService {
         emailWebhook,
       );
       return response?.body?.data?.enabled ?? false;
-    } catch {
-      return false;
+    } catch (error: any) {
+      return this.failMailerSendCall(error, "Error enabling webhook.");
     }
   }
 
@@ -227,8 +228,11 @@ export class MailerSendService {
       }
       const response = await this.instance.email.inbound.single(inboundId);
       return response?.body?.data?.enabled ?? false;
-    } catch {
-      return false;
+    } catch (error: any) {
+      return this.failMailerSendCall(
+        error,
+        "Error checking inbound mail status.",
+      );
     }
   }
 
@@ -271,9 +275,20 @@ export class MailerSendService {
         inboundUpdate,
       );
       return response?.body?.data?.enabled ?? false;
-    } catch {
-      return false;
+    } catch (error: any) {
+      return this.failMailerSendCall(error, "Error enabling inbound mail.");
     }
+  }
+
+  private failMailerSendCall(error: any, fallbackMessage: string): any {
+    const errorMessage =
+      (error?.body?.message || error?.message) + fallbackMessage;
+    this.responseMsgService.addErrorMsg({
+      message: errorMessage,
+      type: "error",
+      show: true,
+    });
+    this.responseMsgService.isSuccess(false);
   }
 
   private validateBase64Size(
